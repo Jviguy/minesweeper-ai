@@ -2,11 +2,12 @@ from collections import deque
 import numpy as np
 import random
 
-class Connect4Env:
+class MineSweeperEnv:
     def __init__(self):
         self.game_over = False
         self.grid = np.full((14, 14), -1)
         self.mines = np.full((14, 14), 0)
+        self.squares_left = 14*14
         self.generate_mines(40)
         self.observation_space = self.state().shape
         self.action_space = (14,14)  # Define the action space
@@ -23,35 +24,38 @@ class Connect4Env:
         # Reset the game to start a new episode
         self.grid = np.full((14, 14), -1)
         self.mines = np.full((14, 14), 0)
-        self.generate_mines()
+        self.generate_mines(40)
         self.game_over = False
-
         return self.state()
 
     def step(self, action):
         # Execute the action in the game
-        self.place(action, self.current_player)
-        done = self.is_game_over()
+        print(action)
+        row,col=action
+        self.reveal(row,col)
         # Get the new state, reward, and done status
         new_state = self.state()
         reward = self.get_reward(action)
+        done = self.game_over
         return new_state, reward, done, {}
 
     def get_reward(self, action) -> float:
-        if self.winner is not None:
-            if self.winner == self.current_player:
-                return 30
-            elif self.winner != self.current_player:
-                return -100
-        if action
+        row, col = action
+        res = 0
+        if self.mines[row,col] == 1:
+            self.game_over = True
+            res -= 100
+        if self.squares_left == 40:
+            res += 100
+            self.game_over = True
+        res += ((40/self.grid[row][col]) if self.grid[row][col] != 0 else 0)*10
         return res
         # ideas:
         # Reward blocking of wins.
         # Punish for allowing wins.
 
     def state(self):
-        player_ch = np.full(self.grid.shape, self.current_player)
-        return np.stack((self.grid, player_ch), axis=-1)
+        return self.grid
 
     def close(self):
         # Close and clean up the environment
@@ -70,11 +74,17 @@ class Connect4Env:
     def reveal(self, row, col):
         if self.is_valid_position(row,col):
             self.grid[row][col] = self.calculate_nearby(row,col)
+            
     
     def calculate_nearby(self, row, col) -> int:
+        count = 0
         for adjR in [-1,0,1]:
-            for adC in [-1,0,1]:
-                
+            for adjC in [-1,0,1]:
+                if adjR != 0 and adjC != 0:
+                    n_row, n_col = row+adjR, col+adjC
+                    if self.mines[n_row][n_col] == 1:
+                        count+=1
+        return count
 
     def is_valid_position(self, row, col):
         return 0 <= row < len(self.grid) and 0 <= col < len(self.grid[0])
