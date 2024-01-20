@@ -53,11 +53,9 @@ class DQNAgent:
             return (random.randint(0,self.action_tuple_size[0]-1), random.randint(0,self.action_tuple_size[1]-1))
         state = np.expand_dims(state, axis=0)
         act_values = self.model.predict(state, verbose=0)[0]
-        print(act_values)
-        for i in range(len(act_values)):
-            if env.height[i] < 0:
-                act_values[i] = -math.inf
-        return np.argmax(act_values)
+
+        x = np.unravel_index(np.argmax(act_values), act_values.shape)
+        return x 
 
     def act_target(self, state, env):
         if np.random.rand() <= self.epsilon:
@@ -82,7 +80,7 @@ class DQNAgent:
 
         # Initialize training data arrays
         x = np.zeros((batch_size, *self.state_size))
-        y = np.zeros((batch_size, self.action_size))
+        y = np.zeros((batch_size, *self.action_tuple_size))
 
         for index, (state, action, reward, next_state, done, priority) in enumerate(minibatch):
             if not done:
@@ -94,7 +92,6 @@ class DQNAgent:
             # Update Q value for given state
             current_qs = current_qs_list[index]
             current_qs[action] = new_q
-
             # Append to training data
             x[index] = state
             y[index] = current_qs

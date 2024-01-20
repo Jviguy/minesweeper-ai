@@ -1,7 +1,6 @@
 import random
 from agent import DQNAgent
 from env import MineSweeperEnv
-
 env = MineSweeperEnv()
 state_size = env.observation_space
 action_size = env.action_space
